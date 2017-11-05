@@ -13,8 +13,21 @@ size hand2
 empty :: Hand
 empty = Empty
 
-value :: Hand -> Integer
+-- | A ranks value according to Black Jack rules
+valueRank :: Rank -> Integer
+valueRank Ace = 11
+valueRank (Numeric x) = x
+valueRank _ = 10
 
-gameOver :: Hand -> Bool
+-- | A cards value according to Black Jack rules
+valueCard :: Card -> Integer
+valueCard (Card r s) = valueRank r
 
-winner :: Hand -> Hand -> Player
+
+--value :: Hand -> Integer
+--value Empty = 0
+--value (Add card hand) = __ + valueCard hand
+
+--gameOver :: Hand -> Bool
+
+--winner :: Hand -> Hand -> Player

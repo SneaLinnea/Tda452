@@ -23,10 +23,15 @@ valueRank _ = 10
 valueCard :: Card -> Integer
 valueCard (Card r s) = valueRank r
 
+-- | We want to check how many aces a player has in her hand
+numberOfAces :: Hand -> Integer
+numberOfAces Empty = 0
+numberOfAces (Add (Card Ace s) hand) = 1 + numberOfAces hand
+numberOfAces (Add card hand) = 0 + numberOfAces hand
 
 --value :: Hand -> Integer
 --value Empty = 0
---value (Add card hand) = __ + valueCard hand
+--value (Add card hand) = __ + value hand
 
 --gameOver :: Hand -> Bool
 

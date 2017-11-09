@@ -38,6 +38,7 @@ value' Empty = 0
 value' (Add card hand) = valueCard card + value hand
 
 -- | Choose the highest value that is still < 21
+-- | Ace is 1 or 11
 value :: Hand -> Integer
 value hand  |v > 21 = v - n*10
             |otherwise = v
@@ -49,6 +50,8 @@ value hand  |v > 21 = v - n*10
 gameOver :: Hand -> Bool
 gameOver hand = value hand > 21
 
+-- | Given one hand for the guest and one for the bank (in that order),
+-- | which player has won?
 winner :: Hand -> Hand -> Player
 winner guest bank | gameOver guest = Bank
                   | gameOver bank = Guest

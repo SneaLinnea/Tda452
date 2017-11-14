@@ -116,12 +116,16 @@ sameSuit s = foldr Add Empty cards
       cards = [Card r s | r <- [Numeric n | n <- [2..10]] ++
               [Jack, Queen, King, Ace]]
 
-  --(Add(Card (Numeric n ) s)
-
---(Add (Card Jack s) (Add (Card Queen s)
-  --           (Add (Card King s) (Add (Card Ace s) Empty)))))
-    --            where
-      --            n = [2..10]
+-- | Property: size of a hand with all cards in a suit is 13
+prop_size_sameSuit :: Suit -> Bool
+prop_size_sameSuit s = size (sameSuit s) == 13
 
 -- | A function that returns a full deck of cards
---fullDeck :: Hand
+fullDeck :: Hand
+fullDeck = sameSuit Hearts <+ sameSuit Spades <+ sameSuit Diamonds
+    <+ sameSuit Clubs
+
+-- | Given a deck and a hand, draw one card from the deck and put on the hand.
+-- |Return both the deck and the hand (in that order)
+draw :: Hand -> Hand -> (Hand,Hand)
+draw Empty hand = error "draw: The deck is empty."

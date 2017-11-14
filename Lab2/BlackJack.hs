@@ -134,3 +134,14 @@ fullDeck = sameSuit Hearts <+ sameSuit Spades <+ sameSuit Diamonds
 draw :: Hand -> Hand -> (Hand,Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add card deck) hand = (deck, (Add card hand))
+
+-- | Given an empty hand return the bank's final hand (assuming the deck as param?!?!)
+playBank :: Hand -> Hand
+playBank deck = playBank' deck Empty
+
+-- | Given the BlackJack rules gives us the best hand for the bank
+playBank' :: Hand -> Hand -> Hand
+playBank' deck bankHand | value bankHand >= 16 = bankHand
+                        | otherwise            = playBank' deck' bankHand'
+                          where (deck',bankHand') = draw deck bankHand
+-- | Property: given a bankHand, it is never < 16

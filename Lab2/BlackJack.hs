@@ -12,6 +12,12 @@ size hand2
   = 1 + 1 + 0
   = 2
 -}
+
+testHand1 = (Add (Card(Numeric 2) Hearts) (Add (Card Jack Spades) Empty))
+testHand2 = (Add (Card (Numeric 7) Spades) (Add (Card Queen Hearts) Empty))
+testDeck = fullDeck
+
+
 empty :: Hand
 empty = Empty
 
@@ -107,8 +113,6 @@ prop_size_onTopOf :: Hand -> Hand -> Bool
 prop_size_onTopOf p1 p2 =
     (size p1 + size p2) == size (p1 <+ p2)
 
---suitNumbers xs = foldr (<+)
-
 -- | Given a suit, return all cards in that suit
 sameSuit :: Suit -> Hand
 sameSuit s = foldr Add Empty cards
@@ -126,6 +130,7 @@ fullDeck = sameSuit Hearts <+ sameSuit Spades <+ sameSuit Diamonds
     <+ sameSuit Clubs
 
 -- | Given a deck and a hand, draw one card from the deck and put on the hand.
--- |Return both the deck and the hand (in that order)
+-- | Return both the deck and the hand (in that order)
 draw :: Hand -> Hand -> (Hand,Hand)
 draw Empty hand = error "draw: The deck is empty."
+draw (Add card deck) hand = (deck, (Add card hand))

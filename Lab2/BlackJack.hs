@@ -2,7 +2,24 @@ module BlackJack where
 import Cards
 import RunGame
 
-import Test.QuickCheck
+import Test.QuickCheck hiding (shuffle)
+import System.Random
+
+{- Implementation -}
+implementation = Interface
+  { iEmpty    = empty
+  , iFullDeck = fullDeck
+  , iValue    = value
+  , iGameOver = gameOver
+  , iWinner   = winner
+  , iDraw     = draw
+  , iPlayBank = playBank
+  , iShuffle  = shuffle
+  }
+
+main :: IO ()
+main = runGame implementation
+
 {-Task 3.2
 size hand2
   = size (Add(Card (Numeric 2) Hearts)
@@ -12,11 +29,6 @@ size hand2
   = 1 + 1 + 0
   = 2
 -}
-
-testHand1 = (Add (Card(Numeric 2) Hearts) (Add (Card Jack Spades) Empty))
-testHand2 = (Add (Card (Numeric 7) Spades) (Add (Card Queen Hearts) Empty))
-testDeck = fullDeck
-
 
 empty :: Hand
 empty = Empty
@@ -97,7 +109,6 @@ prop_bankWinBust guest bank = gameOver guest ==> winner guest bank == Bank
 
 -- | Given two hands, <+ puts the first one on top of the second one
 (<+) :: Hand -> Hand -> Hand
-hand1 <+ Empty = hand1
 Empty <+ hand2 = hand2
 (Add card hand) <+ hand2 = Add card (hand <+ hand2)
 
@@ -126,8 +137,18 @@ prop_size_sameSuit s = size (sameSuit s) == 13
 
 -- | A function that returns a full deck of cards
 fullDeck :: Hand
-fullDeck = sameSuit Hearts <+ sameSuit Spades <+ sameSuit Diamonds
-    <+ sameSuit Clubs
+fullDeck = foldr (<+) Empty (map sameSuit suits)
+  where suits = [Hearts, Spades, Diamonds, Clubs]
+
+-- | Property: any "valid" card is a part of the full deck
+prop_fullDeckFull :: Card -> Bool
+prop_fullDeckFull (Card (Numeric n) s) =
+      (n >=2 && n <= 10) == belongsTo (Card (Numeric n) s) fullDeck
+prop_fullDeckFull c                    = belongsTo c fullDeck
+
+-- | Property: a full deck contains 52 cards
+prop_full :: Bool
+prop_full = size fullDeck == 52
 
 -- | Given a deck and a hand, draw one card from the deck and put on the hand.
 -- | Return both the deck and the hand (in that order)
@@ -135,7 +156,13 @@ draw :: Hand -> Hand -> (Hand,Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add card deck) hand = (deck, (Add card hand))
 
--- | Given an empty hand return the bank's final hand (assuming the deck as param?!?!)
+-- | Property: drawing a card preserves the total number of cards
+prop_drawTotal :: Hand -> Hand -> Bool
+prop_drawTotal d h | d /= Empty = size d + size h == size d' + size h'
+                   | otherwise  = True
+  where (d',h') = draw d h
+
+-- | Given an empty hand return the bank's final hand
 playBank :: Hand -> Hand
 playBank deck = playBank' deck Empty
 
@@ -143,5 +170,36 @@ playBank deck = playBank' deck Empty
 playBank' :: Hand -> Hand -> Hand
 playBank' deck bankHand | value bankHand >= 16 = bankHand
                         | otherwise            = playBank' deck' bankHand'
-                          where (deck',bankHand') = draw deck bankHand
--- | Property: given a bankHand, it is never < 16
+                       where (deck',bankHand') = draw deck bankHand
+
+-- | Property: given a deck with value >= 16 the bank will score >= 16
+prop_playBank16 :: Hand -> Bool
+prop_playBank16 d | value d >= 16 = value (playBank d) >= 16
+                  | otherwise     = True
+
+-- | Removes the nth card from a hand
+removedCard :: Integer -> Hand -> (Card, Hand)
+removedCard 0 (Add card hand) = (card, hand)
+removedCard n (Add card hand) = (card', Add card h')
+  where (card', h') = removedCard (n-1) hand
+
+-- | Returns True if a card belongs to a given deck
+belongsTo :: Card -> Hand -> Bool
+belongsTo c Empty      = False
+belongsTo c (Add c' d) = c == c' || belongsTo c d
+
+-- | Given a hand, returns a hand with same cards but shuffled
+shuffle :: StdGen -> Hand -> Hand
+shuffle g Empty = Empty
+shuffle g d     = Add c (shuffle g' d')
+  where
+    (n,g') = randomR (0,size d - 1) g
+    (c,d') = removedCard n d
+
+-- | Property: shuffling preserves deck size
+prop_shuffleSize :: StdGen -> Hand -> Bool
+prop_shuffleSize g d = size (shuffle g d) == size d
+
+-- | Property: shuffling doesn't change the cards in the deck
+prop_shuffleSameCards :: StdGen -> Card -> Hand -> Bool
+prop_shuffleSameCards g c d = belongsTo c d == belongsTo c (shuffle g d)

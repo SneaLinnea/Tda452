@@ -1,5 +1,6 @@
 
 import Test.QuickCheck
+import Data.Char
 
 -------------------------------------------------------------------------
 
@@ -67,7 +68,16 @@ printSudoku (Sudoku sud) = putStr $ unlines
 -- | readSudoku file reads from the file, and either delivers it, or stops
 -- if the file did not contain a sudoku
 readSudoku :: FilePath -> IO Sudoku
-readSudoku = undefined
+readSudoku file = do
+    text <- readFile file
+    let sud = Sudoku $ map (map charToMaybe) $ lines text
+    if isSudoku sud
+    then return sud
+    else error "Not a sudoku!"
+    where
+      charToMaybe '.' = Nothing
+      charToMaybe c = Just (digitToInt c)
+
 
 -------------------------------------------------------------------------
 

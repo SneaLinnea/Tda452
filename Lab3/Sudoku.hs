@@ -1,6 +1,7 @@
 
 import Test.QuickCheck
 import Data.Char
+import Data.List
 
 -------------------------------------------------------------------------
 
@@ -85,8 +86,9 @@ readSudoku file = do
 
 -- | cell generates an arbitrary cell in a Sudoku
 cell :: Gen (Maybe Int)
-cell = undefined
-
+cell = frequency [(9,return Nothing),
+                   (1, do c <- choose (1,9)
+                          return (Just c))]
 
 -- * C2
 
@@ -95,5 +97,38 @@ instance Arbitrary Sudoku where
   arbitrary =
     do rows <- vectorOf 9 (vectorOf 9 cell)
        return (Sudoku rows)
+
+-- * C3
+
+-- | Property: a generated Sudoku is in fact a sudoku
+prop_Sudoku :: Sudoku -> Bool
+prop_Sudoku sud = isSudoku sud
+
+-------------------------------------------------------------------------
+
+-- | a Block is a column, row or 3*3 cell block
+type Block = [Maybe Int]
+
+-- * D1
+
+-- | a block can not contain the same digit twice
+isOkayBlock :: Block -> Bool
+isOkayBlock [] = True
+isOkayBlock (Nothing:xs) = isOkayBlock xs
+isOkayBlock (x:xs) = not (elem x xs) && isOkayBlock xs
+
+-- * D2
+
+-- | given a sudoku, create a list of all blocks of that Sudoku
+blocks :: Sudoku -> [Block]
+blocks (Sudoku sud) = sud ++ transpose sud ++
+  [squareBlocks sud (x,y) |x <- [0..2], y <-[0..2]]
+    where squareBlocks sud (x,y) = concat $ map (take 3) $ map (drop (3*y))
+                                     (take 3 (drop (3*x) sud))
+-- * D3
+
+-- |
+isOkay :: Sudoku -> Bool
+isOkay sud = and $ map (isOkayBlock) (blocks sud)
 
 -------------------------------------------------------------------------
